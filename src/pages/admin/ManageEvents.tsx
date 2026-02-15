@@ -54,7 +54,7 @@ export default function ManageEvents() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const eventData = {
+    const eventData: Database['public']['Tables']['events']['Insert'] = {
       title: formData.title,
       description: formData.description,
       event_date: formData.event_date,

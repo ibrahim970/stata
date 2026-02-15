@@ -22,7 +22,7 @@ export default function Gallery() {
         .order('event_date', { ascending: false });
 
       if (error) throw error;
-      const eventsWithImages = (data || []).filter(event =>
+      const eventsWithImages = (data as Event[] || []).filter(event =>
         event.gallery_images && event.gallery_images.length > 0
       );
       setEvents(eventsWithImages);

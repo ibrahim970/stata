@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
 

@@ -3,9 +3,6 @@ import { User, Mail, Calendar, Award, Edit2, Save, X, Upload, Phone } from 'luci
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { uploadProfilePicture, deleteProfilePicture } from '../lib/imageUpload';
-import { Database } from '../lib/database.types';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
@@ -54,7 +51,7 @@ export default function ProfilePage() {
         .select('current_student_batches')
         .maybeSingle();
 
-      const currentBatches = settings?.current_student_batches || [];
+      const currentBatches = (settings as { current_student_batches: string[] } | null)?.current_student_batches || [];
       const status = currentBatches.includes(profile.batch) ? 'student' : 'alumni';
       setUserStatus(status);
     } catch (error) {
@@ -104,6 +101,8 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) return;
+
     setLoading(true);
     setMessage('');
 
@@ -120,7 +119,7 @@ export default function ProfilePage() {
           address: formData.address || null,
           avatar_url: formData.avatar_url || null,
         })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
       if (error) throw error;
 

@@ -33,6 +33,7 @@ export default function PostView() {
   }, [id]);
 
   const loadPost = async () => {
+    if (!id) return;
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -54,6 +55,7 @@ export default function PostView() {
   };
 
   const loadComments = async () => {
+    if (!id) return;
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -69,8 +71,9 @@ export default function PostView() {
   };
 
   const loadLikes = async () => {
+    if (!id) return;
     try {
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('likes')
         .select('user_id')
         .eq('post_id', id);
@@ -83,7 +86,7 @@ export default function PostView() {
   };
 
   const handleLike = async () => {
-    if (!user) {
+    if (!user || !id) {
       navigate('/login');
       return;
     }
@@ -104,7 +107,7 @@ export default function PostView() {
         const { error } = await supabase
           .from('likes')
           .insert({
-            post_id: id!,
+            post_id: id,
             user_id: user.id,
           });
 
@@ -118,14 +121,14 @@ export default function PostView() {
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newComment.trim()) return;
+    if (!user || !newComment.trim() || !id) return;
 
     setSubmitting(true);
     try {
       const { error } = await supabase
         .from('comments')
         .insert({
-          post_id: id!,
+          post_id: id,
           user_id: user.id,
           content: newComment.trim(),
         });

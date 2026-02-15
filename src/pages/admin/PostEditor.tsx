@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { Database } from '../../lib/database.types';
 
 export default function PostEditor() {
   const { id } = useParams();
@@ -23,6 +24,8 @@ export default function PostEditor() {
   }, [id]);
 
   const loadPost = async () => {
+    if (!id) return;
+
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -53,25 +56,29 @@ export default function PostEditor() {
 
     try {
       if (id) {
+        const updateData: Database['public']['Tables']['posts']['Update'] = {
+          title: formData.title,
+          content: formData.content,
+          image_url: formData.image_url || null,
+        };
+
         const { error } = await supabase
           .from('posts')
-          .update({
-            title: formData.title,
-            content: formData.content,
-            image_url: formData.image_url || null,
-          })
+          .update(updateData)
           .eq('id', id);
 
         if (error) throw error;
       } else {
+        const insertData: Database['public']['Tables']['posts']['Insert'] = {
+          title: formData.title,
+          content: formData.content,
+          image_url: formData.image_url || null,
+          author_id: user!.id,
+        };
+
         const { error } = await supabase
           .from('posts')
-          .insert({
-            title: formData.title,
-            content: formData.content,
-            image_url: formData.image_url || null,
-            author_id: user!.id,
-          });
+          .insert(insertData);
 
         if (error) throw error;
       }

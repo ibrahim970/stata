@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Save, Plus, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { Database } from '../../lib/database.types';
 
 interface AdminSettings {
   id: string;
@@ -35,16 +36,20 @@ export default function Settings() {
       if (data) {
         setSettings(data as AdminSettings);
       } else {
+        const insertData: Database['public']['Tables']['admin_settings']['Insert'] = {
+          current_student_batches: [],
+        };
+
         const { data: newSettings, error: createError } = await supabase
           .from('admin_settings')
-          .insert({
-            current_student_batches: [],
-          })
+          .insert(insertData)
           .select()
           .maybeSingle();
 
         if (createError) throw createError;
-        setSettings(newSettings as AdminSettings);
+        if (newSettings) {
+          setSettings(newSettings as AdminSettings);
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -88,11 +93,13 @@ export default function Settings() {
     setMessage('');
 
     try {
+      const updateData: Database['public']['Tables']['admin_settings']['Update'] = {
+        current_student_batches: settings.current_student_batches,
+      };
+
       const { error } = await supabase
         .from('admin_settings')
-        .update({
-          current_student_batches: settings.current_student_batches,
-        })
+        .update(updateData)
         .eq('id', settings.id);
 
       if (error) throw error;

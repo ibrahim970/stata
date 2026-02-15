@@ -17,8 +17,13 @@ export interface Database {
           role: 'admin' | 'user'
           batch: string | null
           status: 'student' | 'alumni'
+          phone_number: string | null
+          country_code: string
           avatar_url: string | null
           bio: string | null
+          job_title: string | null
+          designation: string | null
+          address: string | null
           created_at: string
           updated_at: string
         }
@@ -29,8 +34,13 @@ export interface Database {
           role?: 'admin' | 'user'
           batch?: string | null
           status?: 'student' | 'alumni'
+          phone_number?: string | null
+          country_code?: string
           avatar_url?: string | null
           bio?: string | null
+          job_title?: string | null
+          designation?: string | null
+          address?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -41,11 +51,17 @@ export interface Database {
           role?: 'admin' | 'user'
           batch?: string | null
           status?: 'student' | 'alumni'
+          phone_number?: string | null
+          country_code?: string
           avatar_url?: string | null
           bio?: string | null
+          job_title?: string | null
+          designation?: string | null
+          address?: string | null
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       posts: {
         Row: {
@@ -75,6 +91,14 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       comments: {
         Row: {
@@ -104,6 +128,20 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       likes: {
         Row: {
@@ -124,6 +162,20 @@ export interface Database {
           user_id?: string
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "likes_post_id_fkey"
+            columns: ["post_id"]
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       events: {
         Row: {
@@ -159,7 +211,45 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
+      admin_settings: {
+        Row: {
+          id: string
+          current_student_batches: string[]
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          current_student_batches?: string[]
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          current_student_batches?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

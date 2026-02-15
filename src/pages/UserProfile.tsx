@@ -20,6 +20,11 @@ export default function UserProfile() {
   }, [userId]);
 
   const loadProfile = async () => {
+    if (!userId) {
+      navigate('/');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -53,7 +58,7 @@ export default function UserProfile() {
         .select('current_student_batches')
         .maybeSingle();
 
-      const currentBatches = settings?.current_student_batches || [];
+      const currentBatches = (settings as { current_student_batches: string[] } | null)?.current_student_batches || [];
       const status = currentBatches.includes(batch) ? 'student' : 'alumni';
       setUserStatus(status);
     } catch (error) {
