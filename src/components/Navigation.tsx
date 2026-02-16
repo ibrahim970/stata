@@ -12,6 +12,7 @@ export default function Navigation() {
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Events', href: '/events' },
+    { name: 'People', href: '/people' },
     { name: 'Gallery', href: '/gallery' },
     { name: 'Contact', href: '/contact' },
   ];
@@ -73,6 +74,12 @@ export default function Navigation() {
                         className="block px-4 py-2 text-sm hover:bg-[#F5F7FA]"
                       >
                         Manage Events
+                      </Link>
+                      <Link
+                        to="/admin/people"
+                        className="block px-4 py-2 text-sm hover:bg-[#F5F7FA]"
+                      >
+                        Manage People
                       </Link>
                       <Link
                         to="/admin/settings"

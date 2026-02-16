@@ -24,6 +24,7 @@ export interface Database {
           job_title: string | null
           designation: string | null
           address: string | null
+          committee_position: string | null
           created_at: string
           updated_at: string
         }
@@ -41,6 +42,7 @@ export interface Database {
           job_title?: string | null
           designation?: string | null
           address?: string | null
+          committee_position?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -58,6 +60,40 @@ export interface Database {
           job_title?: string | null
           designation?: string | null
           address?: string | null
+          committee_position?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      former_leaders: {
+        Row: {
+          id: string
+          name: string
+          position: string
+          term_start: string
+          term_end: string
+          batch: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          position: string
+          term_start: string
+          term_end: string
+          batch?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          position?: string
+          term_start?: string
+          term_end?: string
+          batch?: string | null
           created_at?: string
           updated_at?: string
         }

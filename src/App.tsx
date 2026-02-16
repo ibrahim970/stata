@@ -12,10 +12,12 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
+import People from './pages/People';
 import AdminDashboard from './pages/admin/Dashboard';
 import ManagePosts from './pages/admin/ManagePosts';
 import PostEditor from './pages/admin/PostEditor';
 import ManageEvents from './pages/admin/ManageEvents';
+import ManagePeople from './pages/admin/ManagePeople';
 import Settings from './pages/admin/Settings';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -67,6 +69,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="events" element={<Events />} />
+            <Route path="people" element={<People />} />
             <Route path="gallery" element={<Gallery />} />
             <Route path="contact" element={<Contact />} />
             <Route path="posts" element={<Posts />} />
@@ -118,6 +121,14 @@ function App() {
               element={
                 <AdminRoute>
                   <ManageEvents />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="admin/people"
+              element={
+                <AdminRoute>
+                  <ManagePeople />
                 </AdminRoute>
               }
             />
