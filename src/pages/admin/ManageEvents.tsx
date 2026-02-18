@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Calendar, X, Save } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Plus, Edit2, Trash2, Calendar, X, Save, Upload } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { uploadEventImage } from '../../lib/imageUpload';
 import { Database } from '../../lib/database.types';
 
 type Event = Database['public']['Tables']['events']['Row'];
@@ -17,10 +18,13 @@ const eventTypeLabels = {
 
 export default function ManageEvents() {
   const { isAdmin, user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -136,6 +140,36 @@ export default function ManageEvents() {
     });
     setEditing(null);
     setShowForm(false);
+    setMessage('');
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('Image size must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    setMessage('');
+
+    try {
+      const publicUrl = await uploadEventImage(file, editing || 'new');
+      const imageUrls = formData.gallery_images
+        ? formData.gallery_images.split(',').map(u => u.trim())
+        : [];
+      imageUrls.push(publicUrl);
+      setFormData({ ...formData, gallery_images: imageUrls.join(', ') });
+      setMessage('Image uploaded successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setMessage('Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (!isAdmin) {
@@ -181,6 +215,16 @@ export default function ManageEvents() {
                 <X className="w-6 h-6" />
               </button>
             </div>
+
+            {message && (
+              <div className={`mb-6 p-4 rounded-lg ${
+                message.includes('success')
+                  ? 'bg-[#2ECC71] text-white'
+                  : 'bg-[#E74C3C] text-white'
+              }`}>
+                {message}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -244,17 +288,58 @@ export default function ManageEvents() {
               </div>
 
               <div>
-                <label htmlFor="gallery_images" className="block text-sm font-medium text-gray-700 mb-2">
-                  Gallery Images (comma-separated URLs)
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gallery Images
+                </label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="bg-[#2F5BEA] hover:bg-[#F39C12] text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center mb-4"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Uploading...' : 'Upload Image'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <label htmlFor="gallery_images_manual" className="block text-sm font-medium text-gray-700 mb-2">
+                  Or paste image URLs (comma-separated)
                 </label>
                 <textarea
-                  id="gallery_images"
+                  id="gallery_images_manual"
                   value={formData.gallery_images}
                   onChange={(e) => setFormData({ ...formData, gallery_images: e.target.value })}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5BEA] focus:border-transparent outline-none transition-all resize-none"
                   placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                 />
+                {formData.gallery_images && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {formData.gallery_images.split(',').map((url, idx) => {
+                        const trimmedUrl = url.trim();
+                        return trimmedUrl ? (
+                          <div key={idx} className="relative">
+                            <img
+                              src={trimmedUrl}
+                              alt={`Gallery ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/200x150?text=Invalid';
+                              }}
+                            />
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-4">

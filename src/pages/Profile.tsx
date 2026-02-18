@@ -44,7 +44,10 @@ export default function ProfilePage() {
 
   const fetchUserStatus = async () => {
     try {
-      if (!profile?.batch) return;
+      if (!profile?.batch) {
+        setUserStatus('alumni');
+        return;
+      }
 
       const { data: settings } = await supabase
         .from('admin_settings')
@@ -52,10 +55,12 @@ export default function ProfilePage() {
         .maybeSingle();
 
       const currentBatches = (settings as { current_student_batches: string[] } | null)?.current_student_batches || [];
-      const status = currentBatches.includes(profile.batch) ? 'student' : 'alumni';
+      const batchStr = String(profile.batch);
+      const status = currentBatches.some(b => String(b) === batchStr) ? 'student' : 'alumni';
       setUserStatus(status);
     } catch (error) {
       console.error('Error fetching user status:', error);
+      setUserStatus('alumni');
     }
   };
 

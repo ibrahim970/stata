@@ -1,16 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Upload, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { uploadPostImage } from '../../lib/imageUpload';
 import { Database } from '../../lib/database.types';
 
 export default function PostEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [loadingPost, setLoadingPost] = useState(!!id);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -40,14 +45,51 @@ export default function PostEditor() {
           content: data.content,
           image_url: data.image_url || '',
         });
+        setPreviewImage(data.image_url || null);
       }
     } catch (error) {
       console.error('Error loading post:', error);
-      alert('Failed to load post');
-      navigate('/admin/posts');
+      setMessage('Failed to load post');
+      setTimeout(() => navigate('/admin/posts'), 1500);
     } finally {
       setLoadingPost(false);
     }
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('Image size must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    setMessage('');
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      const publicUrl = await uploadPostImage(file, id || 'new');
+      setFormData({ ...formData, image_url: publicUrl });
+      setMessage('Image uploaded successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setMessage('Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setPreviewImage(null);
+    setFormData({ ...formData, image_url: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,6 +141,12 @@ export default function PostEditor() {
     });
   };
 
+  const handleImageUrl = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setFormData({ ...formData, image_url: url });
+    setPreviewImage(url);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
@@ -134,6 +182,16 @@ export default function PostEditor() {
             {id ? 'Edit Post' : 'Create New Post'}
           </h1>
 
+          {message && (
+            <div className={`mb-6 p-4 rounded-lg ${
+              message.includes('success')
+                ? 'bg-[#2ECC71] text-white'
+                : 'bg-[#E74C3C] text-white'
+            }`}>
+              {message}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -152,28 +210,56 @@ export default function PostEditor() {
             </div>
 
             <div>
-              <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-                Image URL (Optional)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Post Image (Optional)
+              </label>
+              <div className="flex gap-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="bg-[#2F5BEA] hover:bg-[#F39C12] text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Uploading...' : 'Upload Image'}
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <label htmlFor="image_url_manual" className="block text-sm font-medium text-gray-700 mt-4 mb-2">
+                Or paste image URL
               </label>
               <input
                 type="url"
-                id="image_url"
+                id="image_url_manual"
                 name="image_url"
                 value={formData.image_url}
-                onChange={handleChange}
+                onChange={handleImageUrl}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5BEA] focus:border-transparent outline-none transition-all"
                 placeholder="https://example.com/image.jpg"
               />
-              {formData.image_url && (
-                <div className="mt-4">
+              {previewImage && (
+                <div className="mt-4 relative">
                   <img
-                    src={formData.image_url}
+                    src={previewImage}
                     alt="Preview"
                     className="w-full max-h-64 object-cover rounded-lg"
                     onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/800x400?text=Invalid+Image+URL';
+                      e.currentTarget.src = 'https://via.placeholder.com/800x400?text=Invalid+Image';
                     }}
                   />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-[#E74C3C] hover:bg-[#C0392B] text-white p-2 rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>

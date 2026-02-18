@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Plus, X, Edit2, Trash2, Users } from 'lucide-react';
+import { Save, Plus, X, Edit2, Trash2, Users, Upload } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Database } from '../../lib/database.types';
@@ -27,11 +27,10 @@ export default function ManagePeople() {
   const [showLeaderForm, setShowLeaderForm] = useState(false);
   const [editingLeader, setEditingLeader] = useState<string | null>(null);
   const [leaderFormData, setLeaderFormData] = useState({
-    name: '',
+    member_id: '',
     position: 'president',
     term_start: '',
     term_end: '',
-    batch: '',
   });
 
   useEffect(() => {
@@ -88,12 +87,19 @@ export default function ManagePeople() {
     setSaving(true);
 
     try {
+      const selectedMember = members.find(m => m.id === leaderFormData.member_id);
+      if (!selectedMember) {
+        setMessage('Please select a valid member');
+        setSaving(false);
+        return;
+      }
+
       const leaderData: Database['public']['Tables']['former_leaders']['Insert'] = {
-        name: leaderFormData.name,
+        name: selectedMember.full_name,
         position: leaderFormData.position,
         term_start: leaderFormData.term_start,
         term_end: leaderFormData.term_end,
-        batch: leaderFormData.batch || null,
+        batch: selectedMember.batch,
       };
 
       if (editingLeader) {
@@ -111,7 +117,7 @@ export default function ManagePeople() {
         if (error) throw error;
       }
 
-      setLeaderFormData({ name: '', position: 'president', term_start: '', term_end: '', batch: '' });
+      setLeaderFormData({ member_id: '', position: 'president', term_start: '', term_end: '' });
       setEditingLeader(null);
       setShowLeaderForm(false);
       loadData();
@@ -126,12 +132,12 @@ export default function ManagePeople() {
   };
 
   const handleEditLeader = (leader: FormerLeader) => {
+    const member = members.find(m => m.full_name === leader.name);
     setLeaderFormData({
-      name: leader.name,
+      member_id: member?.id || '',
       position: leader.position,
       term_start: leader.term_start,
       term_end: leader.term_end,
-      batch: leader.batch || '',
     });
     setEditingLeader(leader.id);
     setShowLeaderForm(true);
@@ -158,7 +164,7 @@ export default function ManagePeople() {
   };
 
   const handleCancelLeaderForm = () => {
-    setLeaderFormData({ name: '', position: 'president', term_start: '', term_end: '', batch: '' });
+    setLeaderFormData({ member_id: '', position: 'president', term_start: '', term_end: '' });
     setEditingLeader(null);
     setShowLeaderForm(false);
   };
@@ -278,15 +284,21 @@ export default function ManagePeople() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name
+                    Select Member
                   </label>
-                  <input
-                    type="text"
-                    value={leaderFormData.name}
-                    onChange={(e) => setLeaderFormData({ ...leaderFormData, name: e.target.value })}
+                  <select
+                    value={leaderFormData.member_id}
+                    onChange={(e) => setLeaderFormData({ ...leaderFormData, member_id: e.target.value })}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5BEA] focus:border-transparent outline-none transition-all"
-                  />
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5BEA] focus:border-transparent outline-none transition-all bg-white"
+                  >
+                    <option value="">Choose a member...</option>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.full_name} (Batch {member.batch || 'N/A'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -327,19 +339,6 @@ export default function ManagePeople() {
                     onChange={(e) => setLeaderFormData({ ...leaderFormData, term_end: e.target.value })}
                     required
                     placeholder="e.g., 2021"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5BEA] focus:border-transparent outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Batch (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={leaderFormData.batch}
-                    onChange={(e) => setLeaderFormData({ ...leaderFormData, batch: e.target.value })}
-                    placeholder="e.g., 2016"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5BEA] focus:border-transparent outline-none transition-all"
                   />
                 </div>
